@@ -62,9 +62,9 @@ class endpoint():
 
 
 
-class frame():
+# class frame():
 
-	def __init__(self, isfin, ):
+# 	def __init__(self, isfin, ):
 
 		
 	
