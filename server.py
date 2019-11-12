@@ -6,7 +6,7 @@ import struct
 
 HOST = 'localhost'
 PORT = 6969
-
+OPCODETYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 def hexdecoder(onebyte):
 	decodedbinarray = []
 
@@ -20,8 +20,6 @@ def hexdecoder(onebyte):
 
 # 	def __init__(self, FIN=0, RSV1=0, RSV2=0, RSV3=0, MASK, Maskey, Data): 
 
-		
-
 def framedecode(inpframe):
 	
 	locframe 	= bytearray()
@@ -34,23 +32,93 @@ def framedecode(inpframe):
 
 	return allbin
 
+def arrofinttoint(arrint):
+	opc = []
+	for i in arrint:
+		opc.append(str(i))
+
+	return ''.join(opc)
+
 def framedecompose(inpframe):
 
+	opc = []
 	ppg = []
 	allbin = framedecode(inpframe)
-
-	FIN = allbin[0]
-	RSV1 = allbin[1]
-	RSV2 = allbin[1]
-	RSV3 = allbin[1]
 	
 	for i in allbin:
 		ppg.append(str(i))
 
-	opcode = [''.join(ppg)]
+	stringrep = [''.join(ppg)]
 
-	print("opcode test")
-	print(opcode)	
+	FIN = allbin[0]
+	RSV1 = allbin[1]
+	RSV2 = allbin[2]
+	RSV3 = allbin[3]
+	
+	OPCODE = inpframe[0] & 15
+
+	# if OPCODE not in OPCODETYPES:
+	# 	sendfailpacket()
+
+	MASK = allbin[8]
+	
+	# if MASK != 1:
+	# 	sendfailpacket()
+
+	SMALLLEN = arrofinttoint(allbin[9:16])
+	TESTSMALLEN = inpframe[1] & 127
+	bytecon = 2
+	if TESTSMALLEN > 125:
+		if TESTSMALLEN == 126:
+			SMALLLEN = arrofinttoint(allbin[16:(16+16)])
+			TESTSMALLEN = int.from_bytes(inpframe[2:4], 'big')
+			bytecon = 4
+		elif TESTSMALLEN == 127:
+			SMALLLEN = arrofinttoint(allbin[16:(16+64)])
+			TESTSMALLEN = int.from_bytes(inpframe[4:10], 'big')
+			bytecon = 10
+		else :
+			print("LENGTH ERROR")
+	MASKINGKEY = inpframe[bytecon:bytecon + 4]
+	bytecon2 = bytecon + 4
+
+	DECODED = []
+	DECODEDBYTE = bytearray()
+	
+	# for (var i = 0; i < ENCODED.length; i++) {
+	# 	DECODED[i] = ENCODED[i] ^ MASK[i % 4];
+	# }
+
+	PAYLOAD = inpframe[bytecon2:bytecon2+TESTSMALLEN]
+	print(PAYLOAD, "payload")
+	print(len(PAYLOAD), "lenpayload")
+	print(PAYLOAD[0], "firstpayload")
+
+	for i in range(len(PAYLOAD)):
+		# print("pepegessssss")
+		# print(PAYLOAD[i])
+		# print(MASKINGKEY[i % 4])
+		DECODED.append(PAYLOAD[i] ^ MASKINGKEY[i % 4])
+
+	DECODEDBYTE = bytearray(DECODED)
+	print()
+	print()
+	print("==========================================")
+	print("OPCODE test")
+	print(FIN, "FIN")
+	print(RSV1, "RSV1")
+	print(OPCODE, "OPCODE")
+	print(MASK, "MASK")
+	print(SMALLLEN, "smallen")	
+	print(TESTSMALLEN, "testsmallen")
+	print(MASKINGKEY, "maskinky")
+	print(DECODEDBYTE, "decoded")
+	print("OPCODE done")
+	print("==========================================")
+	print()
+	print()
+
+	return(FIN, OPCODE, MASK, DECODEDBYTE)
 		
 
 class endpoint():
@@ -110,9 +178,7 @@ class endpoint():
 			
 			print("PepeGOOOO")
 
-			framedecompose(data)
-
-			# print(binaryframe)
+			FIN, OPCODE, MASK, DECODEBYE = framedecompose(data)
 
 			if not(data):
 				self.closeconn()

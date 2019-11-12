@@ -1,5 +1,7 @@
 import struct
 
-ganja = 129
+# ganja = bytearray() + b'22'
 
-print(struct.pack('????????', (ganja >> 7), (ganja & 64)  >> 6, (ganja & 32) >> 5, (ganja & 16) >> 4, (ganja & 8) >> 3, (ganja & 4) >> 2, (ganja & 2) >> 1, ganja & 1))
+# print(bytearray(b'\x81P\xcd\\')[0] ^ bytearray(b'pepeg')[0])
+# print(type(bytearray(b'\x81P\xcd\\')[0]))
+print(ord(230 ^ 146))
