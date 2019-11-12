@@ -7,6 +7,36 @@ import struct
 HOST = 'localhost'
 PORT = 6969
 OPCODETYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    #  |Opcode  | Meaning                             | Reference |
+    # -+--------+-------------------------------------+-----------|
+    #  | 0      | Continuation Frame                  | RFC 6455  |
+    # -+--------+-------------------------------------+-----------|
+    #  | 1      | Text Frame                          | RFC 6455  |
+    # -+--------+-------------------------------------+-----------|
+    #  | 2      | Binary Frame                        | RFC 6455  |
+    # -+--------+-------------------------------------+-----------|
+    #  | 8      | Connection Close Frame              | RFC 6455  |
+    # -+--------+-------------------------------------+-----------|
+    #  | 9      | Ping Frame                          | RFC 6455  |
+    # -+--------+-------------------------------------+-----------|
+    #  | 10     | Pong Frame                          | RFC 6455  |
+    # -+--------+-------------------------------------+-----------|
+
+def sendText(str):
+	sendframe = frame(FIN=1, OPCODE=1, Data=str.encode())
+
+def listofbintoint(lista):
+	res = int("".join(str(x) for x in lista), 2) 
+	return res
+
+def inttolistofbin(inta):
+	initlist = [int(x) for x in bin(inta)[2:]]
+	for x in range(4 - len(initlist)):
+		initlist.insert(0, 0)
+
+	return initlist
+
 def hexdecoder(onebyte):
 	decodedbinarray = []
 
@@ -16,16 +46,27 @@ def hexdecoder(onebyte):
 
 	return(decodedbinarray)
 
-# class frame():
+class frame():
 
-# 	def __init__(self, FIN=0, RSV1=0, RSV2=0, RSV3=0, MASK, Maskey, Data): 
+	def __init__(self, FIN=0, RSV1=0, RSV2=0, RSV3=0, OPCODE=0, MASK=0, Data=0): 
+		headerbytes = []
+		headerbytes.append(FIN)
+		headerbytes.append(RSV1)
+		headerbytes.append(RSV2)
+		headerbytes.append(RSV3)
+		headerbytes.extend(inttolistofbin(OPCODE))
+		headerbytes.append(MASK)
+		
+		print(headerbytes, "headerbytes")
+		header = listofbintoint(headerbytes)
+		print(header, "headerint")
 
 def framedecode(inpframe):
 	
 	locframe 	= bytearray()
 	locframe 	= inpframe
 	allbin 		= []
-	print(locframe)
+	# print(locframe)
 	
 	for i in locframe:
 		allbin.extend(hexdecoder(i))
@@ -174,11 +215,17 @@ class endpoint():
 			print("Connection Established")
 		while(confirmed):
 			
-			data = conn.recv(1024)
+			data = conn.recv(9999)
 			
 			print("PepeGOOOO")
 
-			FIN, OPCODE, MASK, DECODEBYE = framedecompose(data)
+			FIN, OPCODE, MASK, DECODEBYTE = framedecompose(data)
+
+			#!echo 
+			if DECODEBYTE.decode()[:5] == "!echo":
+				print(DECODEBYTE.decode()[6:])
+				
+				sendText(DECODEBYTE.decode()[6:])
 
 			if not(data):
 				self.closeconn()
@@ -186,14 +233,6 @@ class endpoint():
 
 	def closeconn(self):
 		pass
-
-
-
-
-# class frame():
-
-# 	def __init__(self, isfin, ):
-
 		
 	
 def main():

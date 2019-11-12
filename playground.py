@@ -1,7 +1,10 @@
 import struct
 
-# ganja = bytearray() + b'22'
+def inttolistofbin(inta):
+	initlist = [int(x) for x in bin(inta)[2:]]
+	for x in range(4 - len(initlist)):
+		initlist.insert(0, 0)
 
-# print(bytearray(b'\x81P\xcd\\')[0] ^ bytearray(b'pepeg')[0])
-# print(type(bytearray(b'\x81P\xcd\\')[0]))
-print(ord(230 ^ 146))
+	return initlist
+
+print(inttolistofbin(0))
