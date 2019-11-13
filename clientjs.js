@@ -1,5 +1,5 @@
-// var exampleSocket = new WebSocket("ws://0a22ec06.ngrok.io");
-var exampleSocket = new WebSocket("ws://localhost:4040");
+var exampleSocket = new WebSocket("ws://18.139.221.146");
+// var exampleSocket = new WebSocket("ws://localhost:4040");
 
 exampleSocket.onopen = function (event) {
     // exampleSocket.send("titid"); 
