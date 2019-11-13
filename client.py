@@ -9,7 +9,7 @@ import hashlib
 
 async def hello():
     uri = "ws://f3439234.ngrok.io"
-    uri = "ws://localhost:6969"
+    uri = "ws://localhost:4040"
     async with websockets.connect(uri) as websocket:
         # name = input("What's your name? ")
 

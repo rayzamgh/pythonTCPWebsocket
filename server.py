@@ -88,12 +88,11 @@ def listofbintobytes(listb):
 	
 	return ppg
 
-def frameconstruct(FIN=0, RSV1=0, RSV2=0, RSV3=0, OPCODE=0, MASK=0, Data=0): 
+def frameconstruct(FIN=0, RSV1=0, RSV2=0, RSV3=0, OPCODE=0, MASK=0, DATUM=0): 
 		
 	print(OPCODE, "OPCODE")
 	print(type(OPCODE), "OPCODETYPE")
 
-	DATUM = Data.encode()
 	headerbytes = []
 	headerbytes.append(FIN)
 	headerbytes.append(RSV1)
@@ -116,8 +115,13 @@ def frameconstruct(FIN=0, RSV1=0, RSV2=0, RSV3=0, OPCODE=0, MASK=0, Data=0):
 
 	ppg = listofbintobytes(headerbytes)
 	print(ppg,"INTEGER LIST")
+	
 	headerbytescoded = bytearray(ppg)
-	headerbytescoded += DATUM
+
+	if isinstance(DATUM, bytes):
+		headerbytescoded += DATUM
+	elif isinstance(DATUM, str):
+		headerbytescoded += DATUM.encode()
 
 	print(headerbytescoded, "HEADERBYTESCODED")
 	print(headerbytes, "FRAME HEADERBYTES IN BINARY")
@@ -291,7 +295,7 @@ class endpoint():
 			if OPCODE == 8:
 				self.sendCloseFrame()
 				break
-			
+
 			# while not FIN :
 			# 	print("Continue Next Package")
 
@@ -302,18 +306,43 @@ class endpoint():
 			# 	DECODEBYTE += DECODEBYTEDALEM
 
 			#!echo
-			if len(DECODEBYTE) > 4:
+			#!submission
 
-				mengling = DECODEBYTE.decode()[:5]
-				
-				print(DECODEBYTE, "DCDBT")
-				print(mengling, "DCDBTDCD")
-				if mengling == "!echo":
-					self.sendText(DECODEBYTE.decode()[6:])
+			if OPCODE == 9:
+				self.sendPongFrame()
+
+			if OPCODE == 1:
+				print(DECODEBYTE, "DECODEBYTEEEEE===============")
+				if DECODEBYTE.decode()[0] == '!':
+
+					mengling = DECODEBYTE.decode()[:5]
+					
+					print(DECODEBYTE, "DCDBT")
+
+					if mengling == "!echo":
+						print("==============ECHO==================")
+						self.sendText(DECODEBYTE.decode()[6:].encode())
+					
+					
+					menglingtwo = DECODEBYTE.decode()[:11]
+
+					if menglingtwo == "!submission":
+						print("==============SUBMISSION==================")
+						self.sendFile(open('sabeb.zip', 'rb').read())
+						
+					# if mengling == "!echo":
+					# 	self.sendText(DECODEBYTE.decode()[6:])
+	def sendPongFrame(self):
+		print("********************")
+		sendframe = frameconstruct(FIN=1, OPCODE=11, DATUM='')
+		print("********************")
+		print("CLOSEFRAME")
+		self.chan.sendall(sendframe)
+		
 
 	def sendCloseFrame(self):
 		print("********************")
-		sendframe = frameconstruct(FIN=1, OPCODE=8, Data='')
+		sendframe = frameconstruct(FIN=1, OPCODE=8, DATUM='')
 		print("********************")
 		print("CLOSEFRAME")
 		self.chan.sendall(sendframe)
@@ -321,9 +350,17 @@ class endpoint():
 
 	def sendText(self, str):
 		print("********************")
-		sendframe = frameconstruct(FIN=1, OPCODE=1, Data=str)
+		sendframe = frameconstruct(FIN=1, OPCODE=1, DATUM=str)
 		print("********************")
 		print(sendframe, "FRAME SEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEENT")
+
+		self.chan.sendall(sendframe)
+
+	def sendFile(self, data):
+		print("********************")
+		sendframe = frameconstruct(FIN=1, OPCODE=2, DATUM=data)
+		print("********************")
+		print(sendframe, "FRAME SENT FILE")
 
 		self.chan.sendall(sendframe)
 
