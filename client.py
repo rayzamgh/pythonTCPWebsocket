@@ -1,14 +1,45 @@
-import socket
+#!/usr/bin/env python
 
-HOST = "127.0.0.1"
-PORT = 65432
+# WS client example
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((HOST,PORT))
-test = "GET /chat HTTP/1.1\r\n"+"Host: example.com:8000\r\n"+ "Upgrade: websocket\r\n" +"Connection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"+"Sec-WebSocket-Version: 13\r\n"
-sock.sendall(bytes(test, 'utf-8'))
-data = sock.recv(1024)
-sock.close()
-str = data.decode('utf-8')
+import asyncio
+import websockets
+import time
+import hashlib
 
-print('Received\n\r', data.decode('utf-8'))
+async def hello():
+    uri = "ws://f3439234.ngrok.io"
+    uri = "ws://localhost:4040"
+    async with websockets.connect(uri) as websocket:
+        # name = input("What's your name? ")
+
+        await websocket.send("!echo TITISKI")
+        # print(f"> {name}")
+
+        greeting = await websocket.recv()
+        time.sleep(5)
+        print(f"< {greeting}")
+
+        await websocket.send("!submission")
+        # print(f"> {name}")
+
+        greeting = await websocket.recv()
+        fileA = open("teste.zip",'wb')
+        fileA.write(greeting)
+        fileA.close()
+        time.sleep(5)
+        
+        pong_waiter = await websocket.ping()
+        time.sleep(5)
+        print(f"< {pong_waiter}")
+        
+        await websocket.send(greeting)
+        # print(f"> {name}")
+
+        greeting = await websocket.recv()
+        time.sleep(5)
+        print(f"< {greeting}")
+        
+
+asyncio.get_event_loop().run_until_complete(hello())
+
