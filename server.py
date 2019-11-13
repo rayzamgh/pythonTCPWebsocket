@@ -5,7 +5,7 @@ import threading
 import struct
 
 HOST = 'localhost'
-PORT = 6969
+PORT = 4040
 OPCODETYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
     #  |Opcode  | Meaning                             | Reference |
@@ -23,8 +23,6 @@ OPCODETYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     #  | 10     | Pong Frame                          | RFC 6455  |
     # -+--------+-------------------------------------+-----------|
 
-def sendText(str):
-	sendframe = frame(FIN=1, OPCODE=1, Data=str.encode())
 
 def listofbintoint(lista):
 	res = int("".join(str(x) for x in lista), 2) 
@@ -34,7 +32,41 @@ def inttolistofbin(inta):
 	initlist = [int(x) for x in bin(inta)[2:]]
 	for x in range(4 - len(initlist)):
 		initlist.insert(0, 0)
+	
+	return initlist
 
+
+def inttolistofbinlen1(inta):
+	initlist = [int(x) for x in bin(inta)[2:]]
+	for x in range(7 - len(initlist)):
+		initlist.insert(0, 0)
+
+	return initlist
+
+
+def inttolistofbinlen2(inta):
+	initlist = [int(x) for x in bin(inta)[2:]]
+	for x in range(16 - len(initlist)):
+		initlist.insert(0, 0)
+
+	return initlist
+
+
+def inttolistofbinlen3(inta):
+	initlist = [int(x) for x in bin(inta)[2:]]
+	for x in range(64 - len(initlist)):
+		initlist.insert(0, 0)
+
+	return initlist
+
+
+def inttolistofbintotal(inta):
+	initlist = [int(x) for x in bin(inta)[2:]]
+	for x in range(8 - len(initlist)):
+		initlist.insert(0, 0)
+
+	print(initlist, "INITLIST")
+	
 	return initlist
 
 def hexdecoder(onebyte):
@@ -46,20 +78,51 @@ def hexdecoder(onebyte):
 
 	return(decodedbinarray)
 
-class frame():
+def listofbintobytes(listb):
+	print(listb,"LISTB")
+	ppg = []
+	for i in range(0, len(listb), 8):
+		duit = listofbintoint(listb[i:i+8])
+		print(duit, "DUIT")
+		ppg.append(duit)
+	
+	return ppg
 
-	def __init__(self, FIN=0, RSV1=0, RSV2=0, RSV3=0, OPCODE=0, MASK=0, Data=0): 
-		headerbytes = []
-		headerbytes.append(FIN)
-		headerbytes.append(RSV1)
-		headerbytes.append(RSV2)
-		headerbytes.append(RSV3)
-		headerbytes.extend(inttolistofbin(OPCODE))
-		headerbytes.append(MASK)
+def frameconstruct(FIN=0, RSV1=0, RSV2=0, RSV3=0, OPCODE=0, MASK=0, Data=0): 
 		
-		print(headerbytes, "headerbytes")
-		header = listofbintoint(headerbytes)
-		print(header, "headerint")
+	print(OPCODE, "OPCODE")
+	print(type(OPCODE), "OPCODETYPE")
+
+	DATUM = Data.encode()
+	headerbytes = []
+	headerbytes.append(FIN)
+	headerbytes.append(RSV1)
+	headerbytes.append(RSV2)
+	headerbytes.append(RSV3)
+	headerbytes.extend(inttolistofbin(OPCODE))
+	headerbytes.append(MASK)
+	
+	LENGTH = len(DATUM)
+
+	if LENGTH > 125:
+		headerbytes.extend(inttolistofbinlen1(126))
+		headerbytes.extend(inttolistofbinlen2(LENGTH))
+	else:
+		headerbytes.extend(inttolistofbinlen1(LENGTH))
+	
+	print(len(DATUM), "ACTUAL LEN")
+	print(LENGTH, "HEADER LENGTH")
+	print(OPCODE, "OPCODE FRAME")
+
+	ppg = listofbintobytes(headerbytes)
+	print(ppg,"INTEGER LIST")
+	headerbytescoded = bytearray(ppg)
+	headerbytescoded += DATUM
+
+	print(headerbytescoded, "HEADERBYTESCODED")
+	print(headerbytes, "FRAME HEADERBYTES IN BINARY")
+
+	return headerbytescoded
 
 def framedecode(inpframe):
 	
@@ -116,7 +179,7 @@ def framedecompose(inpframe):
 			bytecon = 4
 		elif TESTSMALLEN == 127:
 			SMALLLEN = arrofinttoint(allbin[16:(16+64)])
-			TESTSMALLEN = int.from_bytes(inpframe[4:10], 'big')
+			TESTSMALLEN = int.from_bytes(inpframe[2:10], 'big')
 			bytecon = 10
 		else :
 			print("LENGTH ERROR")
@@ -177,7 +240,8 @@ class endpoint():
 		confirmed = False
 		output = ''
 		while (undefined):
-			data = conn.recv(1024)
+			data = conn.recv(65536)
+			print(data, "PEEEEEEEEEEEPEEEEEEEEEEEEEEGEEEEEEEEEEEEEEEEEEe")
 			str = data.decode()
 			if (str.lower().find("upgrade: websocket") != -1 and str.lower().find("connection: upgrade") != -1 and str.lower().find("http/1.1") != -1 and str.lower().find("get /") != -1):
 				proc = str.split("\r\n")
@@ -197,42 +261,74 @@ class endpoint():
 				output = "HTTP/1.1 101 Switching Protocols\r\n"+"Upgrade: websocket\r\n"+"Connection: Upgrade\r\n"+"Sec-WebSocket-Accept:"+ key + "\r\n\r\n"
 				confirmed = True
 				self.chan = conn
+				undefined = False
 			else:
 				output = b'Bad Request\r\n'
 				undefined = False
 				self.chan = False
 			
 			if not(data):
-				self.closeconn()
+				undefined = False
+				break
 
 			if output:
 				conn.sendall(output.encode())
 
-			if KeyboardInterrupt:
-				self.closeconn()
-				break
 		if(confirmed):
 			print("Connection Established")
 		while(confirmed):
 			
-			data = conn.recv(9999)
+			data = conn.recv(65536)
 			
-			print("PepeGOOOO")
+			print(data, "DATAMASUK")
+
+			if len(data) < 2:
+				self.sendCloseFrame()
+				break
 
 			FIN, OPCODE, MASK, DECODEBYTE = framedecompose(data)
 
-			#!echo 
-			if DECODEBYTE.decode()[:5] == "!echo":
-				print(DECODEBYTE.decode()[6:])
-				
-				sendText(DECODEBYTE.decode()[6:])
-
-			if not(data):
-				self.closeconn()
+			if OPCODE == 8:
+				self.sendCloseFrame()
 				break
+			
+			# while not FIN :
+			# 	print("Continue Next Package")
+
+			# 	datay = conn.recv(65536)
+
+			# 	FIN, OPCODE, MASK, DECODEBYTEDALEM = framedecompose(datay)
+
+			# 	DECODEBYTE += DECODEBYTEDALEM
+
+			#!echo
+			if len(DECODEBYTE) > 4:
+
+				mengling = DECODEBYTE.decode()[:5]
+				
+				print(DECODEBYTE, "DCDBT")
+				print(mengling, "DCDBTDCD")
+				if mengling == "!echo":
+					self.sendText(DECODEBYTE.decode()[6:])
+
+	def sendCloseFrame(self):
+		print("********************")
+		sendframe = frameconstruct(FIN=1, OPCODE=8, Data='')
+		print("********************")
+		print("CLOSEFRAME")
+		self.chan.sendall(sendframe)
+		self.closeconn()
+
+	def sendText(self, str):
+		print("********************")
+		sendframe = frameconstruct(FIN=1, OPCODE=1, Data=str)
+		print("********************")
+		print(sendframe, "FRAME SEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEENT")
+
+		self.chan.sendall(sendframe)
 
 	def closeconn(self):
-		pass
+		self.chan.close()
 		
 	
 def main():

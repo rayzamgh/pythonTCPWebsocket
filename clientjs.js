@@ -1,4 +1,4 @@
-var exampleSocket = new WebSocket("ws://localhost:6969");
+var exampleSocket = new WebSocket("ws://0a22ec06.ngrok.io");
 
 exampleSocket.onopen = function (event) {
     // exampleSocket.send("titid"); 
@@ -18,5 +18,6 @@ function sendText(msg) {
 }
 
 exampleSocket.onmessage = function (event) {
+    console.log("GOT DATA")
     console.log(event.data);
 }
