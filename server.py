@@ -263,7 +263,7 @@ class endpoint():
 				self.chan = conn
 				undefined = False
 			else:
-				output = b'Bad Request\r\n'
+				output = 'Bad Request\r\n'
 				undefined = False
 				self.chan = False
 			
