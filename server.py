@@ -4,8 +4,8 @@ import hashlib
 import threading
 import struct
 
-HOST = '172.31.26.237'
-PORT = 4040
+HOST = 'localhost'
+PORT = 6969
 OPCODETYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
     #  |Opcode  | Meaning                             | Reference |
@@ -120,7 +120,7 @@ def frameconstruct(FIN=0, RSV1=0, RSV2=0, RSV3=0, OPCODE=0, MASK=0, DATUM=0):
 
 	if isinstance(DATUM, bytes):
 		headerbytescoded += DATUM
-	elif isinstance(DATUM, strgit):
+	elif isinstance(DATUM, str):
 		headerbytescoded += DATUM.encode()
 
 	print(headerbytescoded, "HEADERBYTESCODED")
@@ -310,6 +310,15 @@ class endpoint():
 
 			if OPCODE == 9:
 				self.sendPongFrame()
+
+			if OPCODE == 2:
+				originalhash = hashlib.md5(open('sabeb.zip', 'rb').read()).hexdigest().lower()
+				receivedhash = hashlib.md5(DECODEBYTE).hexdigest().lower()
+
+				if originalhash == receivedhash:
+					self.sendText('1'.encode())
+				else:
+					self.sendText('0'.encode())
 
 			if OPCODE == 1:
 				print(DECODEBYTE, "DECODEBYTEEEEE===============")
